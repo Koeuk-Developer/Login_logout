@@ -13,6 +13,11 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
 
+use Illuminate\Contracts\Auth\StatefulGuard;
+use Laravel\Fortify\AttemptToAuthenticate;
+use Laravel\Fortify\RedirectIfTwoFactorAuthenticatable;
+use App\Http\Controllers\AdminController;
+
 class FortifyServiceProvider extends ServiceProvider
 {
     /**
@@ -20,7 +25,10 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->when([AdminController::class, AttemptToAuthenticate::class, RedirectIfThoFactoryAuthenticatable::class])
+            ->needs(StatefulGuard::class)->give(function () {
+                return  Auth::guard('admin');
+            });
     }
 
     /**
@@ -34,7 +42,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
         });
